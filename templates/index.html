@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Patients — HealthPredict{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2><i class="fa-solid fa-users me-2 text-primary"></i>Patient Records</h2>
+  <div class="d-flex gap-2 flex-wrap">
+    <form class="d-flex search-box" method="get" action="{{ url_for('index') }}">
+      <input class="form-control" type="search" name="search" placeholder="Search name or email…" value="{{ search }}">
+      <button class="btn btn-outline-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </form>
+    <a href="{{ url_for('add_patient') }}" class="btn btn-primary">
+      <i class="fa-solid fa-user-plus me-1"></i>Add Patient
+    </a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg,#0d6efd,#0a3d8f)">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div>
+      <div class="stat-value">{{ patients|length }}</div>
+      <div class="stat-label">Total Patients</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg,#667eea,#764ba2)">
+      <i class="fa-solid fa-robot"></i>
+    </div>
+    <div>
+      <div class="stat-value">{{ patients|selectattr('remarks')|list|length }}</div>
+      <div class="stat-label">AI Assessed</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg,#10b981,#065f46)">
+      <i class="fa-solid fa-vial"></i>
+    </div>
+    <div>
+      <div class="stat-value">3</div>
+      <div class="stat-label">Biomarkers</div>
+    </div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card table-card">
+  {% if patients %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Full Name</th>
+          <th>Date of Birth</th>
+          <th>Email</th>
+          <th>Glucose <small class="text-muted">(mg/dL)</small></th>
+          <th>Haemoglobin <small class="text-muted">(g/dL)</small></th>
+          <th>Cholesterol <small class="text-muted">(mg/dL)</small></th>
+          <th>Remarks <span class="ai-badge ms-1">AI</span></th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in patients %}
+        <tr>
+          <td class="text-muted" style="font-size:0.8rem">{{ loop.index }}</td>
+          <td>
+            <div class="fw-semibold">{{ p.full_name }}</div>
+          </td>
+          <td>{{ p.date_of_birth }}</td>
+          <td><a href="mailto:{{ p.email }}" class="text-decoration-none">{{ p.email }}</a></td>
+          <td>
+            {% set g = p.glucose %}
+            <span class="badge-value {% if g < 70 %}badge-low{% elif g > 99 %}badge-high{% else %}badge-normal{% endif %}">
+              {{ g }}
+            </span>
+          </td>
+          <td>
+            {% set h = p.haemoglobin %}
+            <span class="badge-value {% if h < 12 %}badge-low{% elif h > 17.5 %}badge-high{% else %}badge-normal{% endif %}">
+              {{ h }}
+            </span>
+          </td>
+          <td>
+            {% set c = p.cholesterol %}
+            <span class="badge-value {% if c < 200 %}badge-normal{% elif c < 240 %}badge-low{% else %}badge-high{% endif %}">
+              {{ c }}
+            </span>
+          </td>
+          <td>
+            <div class="remarks-cell" title="{{ p.remarks }}">
+              {% if p.remarks %}{{ p.remarks }}{% else %}<span class="text-muted fst-italic">—</span>{% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('view_patient', patient_id=p.id) }}" class="btn btn-outline-primary btn-action" title="View">
+                <i class="fa-solid fa-eye"></i>
+              </a>
+              <a href="{{ url_for('edit_patient', patient_id=p.id) }}" class="btn btn-outline-secondary btn-action" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </a>
+              <form method="post" action="{{ url_for('delete_patient', patient_id=p.id) }}" class="delete-form">
+                <button type="submit" class="btn btn-outline-danger btn-action" title="Delete">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-user-slash d-block"></i>
+    <h5 class="mt-2 text-muted">
+      {% if search %}No patients match "{{ search }}"{% else %}No patients yet{% endif %}
+    </h5>
+    {% if not search %}
+    <a href="{{ url_for('add_patient') }}" class="btn btn-primary mt-3">
+      <i class="fa-solid fa-user-plus me-1"></i>Add First Patient
+    </a>
+    {% else %}
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary mt-3">Clear Search</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.delete-form').forEach(form => {
+  form.addEventListener('submit', e => {
+    if (!confirm('Delete this patient record? This action cannot be undone.')) {
+      e.preventDefault();
+    }
+  });
+});
+</script>
+{% endblock %}

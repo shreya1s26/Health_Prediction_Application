@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Patient — HealthPredict{% endblock %}
+
+{% block content %}
+<!-- Spinner overlay shown while AI processes -->
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner-border text-primary" style="width:3rem;height:3rem" role="status"></div>
+  <p><i class="fa-solid fa-robot me-2"></i>AI is analysing blood test results…</p>
+</div>
+
+<div class="page-header">
+  <h2>
+    <i class="fa-solid {% if action == 'Add' %}fa-user-plus{% else %}fa-user-pen{% endif %} me-2 text-primary"></i>
+    {{ action }} Patient
+  </h2>
+  <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+    <i class="fa-solid fa-arrow-left me-1"></i>Back
+  </a>
+</div>
+
+<div class="form-card">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <i class="fa-solid fa-id-card me-2"></i>Patient Information
+    </div>
+    <div class="card-body p-4">
+      <form method="post" id="patientForm" novalidate>
+
+        <!-- Personal Details -->
+        <div class="section-divider mb-3">Personal Details</div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label" for="full_name">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="full_name" name="full_name"
+                   value="{{ patient.full_name or '' }}" placeholder="e.g. Jane Doe" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="date_of_birth">Date of Birth <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth"
+                   value="{{ patient.date_of_birth or '' }}" max="{{ today }}" required>
+            <div class="form-text text-muted">Cannot be today or a future date.</div>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="email">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="email" name="email"
+                   value="{{ patient.email or '' }}" placeholder="e.g. jane@example.com" required>
+          </div>
+        </div>
+
+        <!-- Blood Test Results -->
+        <div class="section-divider mb-3">Blood Test Results</div>
+        <div class="row g-3 mb-2">
+          <div class="col-md-4">
+            <label class="form-label" for="glucose">
+              Glucose <span class="text-danger">*</span>
+              <span class="text-muted fw-normal">(mg/dL)</span>
+            </label>
+            <input type="number" class="form-control" id="glucose" name="glucose" step="0.01" min="0.01"
+                   value="{{ patient.glucose or '' }}" placeholder="e.g. 95" required>
+            <div class="form-text text-muted">Normal fasting: 70–99 mg/dL</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="haemoglobin">
+              Haemoglobin <span class="text-danger">*</span>
+              <span class="text-muted fw-normal">(g/dL)</span>
+            </label>
+            <input type="number" class="form-control" id="haemoglobin" name="haemoglobin" step="0.01" min="0.01"
+                   value="{{ patient.haemoglobin or '' }}" placeholder="e.g. 14.5" required>
+            <div class="form-text text-muted">Normal: Men 13.5–17.5, Women 12–15.5</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="cholesterol">
+              Cholesterol <span class="text-danger">*</span>
+              <span class="text-muted fw-normal">(mg/dL)</span>
+            </label>
+            <input type="number" class="form-control" id="cholesterol" name="cholesterol" step="0.01" min="0.01"
+                   value="{{ patient.cholesterol or '' }}" placeholder="e.g. 180" required>
+            <div class="form-text text-muted">Desirable: &lt;200, High: ≥240</div>
+          </div>
+        </div>
+
+        <div class="alert alert-info d-flex gap-2 align-items-start mt-3 mb-4" role="alert">
+          <i class="fa-solid fa-robot mt-1"></i>
+          <div>
+            <strong>AI Health Assessment</strong> — After saving, our AI will analyse the blood test values and generate a personalised health remark automatically.
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-xmark me-1"></i>Cancel
+          </a>
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <i class="fa-solid fa-floppy-disk me-1"></i>
+            {% if action == 'Add' %}Save &amp; Analyse{% else %}Update &amp; Re-analyse{% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('date_of_birth').setAttribute('max', today);
+
+document.getElementById('patientForm').addEventListener('submit', function(e) {
+  const form = this;
+  if (!form.checkValidity()) { form.reportValidity(); e.preventDefault(); return; }
+
+  // Extra: DOB not in future
+  const dob = document.getElementById('date_of_birth').value;
+  if (dob >= today) {
+    alert('Date of birth cannot be today or a future date.');
+    e.preventDefault(); return;
+  }
+
+  // Show spinner
+  document.getElementById('spinnerOverlay').classList.add('active');
+  document.getElementById('submitBtn').disabled = true;
+});
+</script>
+{% endblock %}
